@@ -14,9 +14,10 @@ int main() {
         cout << "Enter a number followed by an operator (+, -, *, /) or '=' to calculate: ";
         getline(cin, input);
 
+        // dectects numbers within the input
         stringstream ss(input);
-        double num;
-        ss >> num;
+        double num; 
+        ss >> num; // checks if any inputs in ss can be a double variable like num
 
         if (ss.fail()) {
             if (input == "=") {
@@ -27,7 +28,8 @@ int main() {
             }
         }
 
-        char nextOp;
+        // Detects operations which are charaters in the program
+        char nextOp; 
         ss >> nextOp;
 
         if (nextOp == '+' || nextOp == '-' || nextOp == '*' || nextOp == '/') {
