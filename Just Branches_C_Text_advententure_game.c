@@ -121,3 +121,8 @@ int right_riddle(){
 
 }
 
+void mainMenu(){
+
+
+}
+
