@@ -4,13 +4,18 @@
 #include <stdlib.h>
 extern void initialise_monitor_handles(void);
 
+// Declar assembly function
+extern int fast_choice(int input);  // Handles branching in assembly
+extern int check_riddle(int puzzle_id, char *answer);  // Checks puzzle in assembly
+
+
 #define MAX_PATH 50 // max
 
 typedef struct Node {
     char *description;         // General location description
     char *dialogue;            // Unique dialogue for this node
     struct Node *paths[MAX_PATHS]; // Paths forward
-    int (*puzzle)();           // Pointer to a puzzle function (if any)
+    int puzzle_id;          // Id to call puzzle in assembly
 } Node;
 
 
@@ -35,78 +40,84 @@ void displayNode(Node *node) {
     char *dialogue = node->dialogue;
     while (*dialogue) {
         putchar(*dialogue++);
-        fflush(stdout);  // Ensure text appears immediately
+        fflush(stdout);
         if (*dialogue == '\n') {
-            getchar();  // Wait for user after each line
+            getchar();  // Pause after each line
         }
     }
     printf("\n");
+
+    // Run puzzle if present
+    if (node->puzzle != NULL) {
+        if (!node->puzzle()) {
+            printf("\nGame Over! Try again.\n");
+            exit(0);  // Exit game if puzzle fails
+        }
+    }
 }
 
 
 int main() {
-
-  
-// Create starting node
-  Node *start = createNode(
+    // Define game nodes
+    Node start = {
         "You arrive at a fork in the road.",
         "Two figures stand before you.\n"
         "One grins mischievously, the other remains solemn.\n"
         "The grinning man smirks: \"A bright path ahead? Or just an illusion?\"\n"
         "The serious man nods: \"Shadows reveal the truth, but can you see it?\"\n"
-        "Which path will you take?\n",
-        NULL);
+        "Which path will you take?",
+        {NULL, NULL}, 0
+    };
 
- // Left path: Grinning man (No puzzle yet)
-    start->paths[0] = createNode(
+    // Left path (No puzzle)
+    Node left_path = {
         "You chose the left path.",
         "The grinning man chuckles: \"Did you choose wisely? We’ll see...\"\n",
-        NULL);
+        {NULL, NULL}, 0
+    };
 
-    // Right path: Serious man (No puzzle yet)
-    start->paths[1] = createNode(
+    // Right path (Riddle puzzle)
+    Node right_path = {
         "You chose the right path.",
-        "The serious man nods: \"Darkness guides the way. Tread carefully.\"\n",
-        NULL);
+        "The serious man nods: \"Darkness guides the way. Answer wisely.\"\n"
+        "Riddle: 'I have keys but open no locks. What am I?'",
+        {NULL, NULL}, 1  // Puzzle ID 1 (calls assembly)
+    };
 
-  
+    // Link paths
+    start.paths[0] = &left_path;
+    start.paths[1] = &right_path;
 
-while (1) {
-        printf("\n%s\n", current->description);
-        printf("%s\n", current->dialogue);
+    // Start game
+    Node *current = &start;
+    displayNode(current);
 
-        // Run puzzle if applicable
-        if (current->puzzle != NULL) {
-            if (!current->puzzle()) {
-                printf("Game Over! Try again.\n");
-                break;
-            }
-        }
-
+    while (1) {
         // Display choices
-        for (int i = 0; i < MAX_PATHS; i++) {
-            if (current->paths[i] != NULL) {
-                printf("(%d) %s\n", i + 1, current->paths[i]->description);
-            }
-        }
+        printf("\n(1) %s\n(2) %s\n", left_path.description, right_path.description);
+        printf("Choose a path (1-2) or enter 0 to quit: ");
 
-        // Get player choice
         int choice;
-        printf("Choose a path (1) or enter 0 to quit: ");
         scanf("%d", &choice);
 
-        if (choice == 0) break;
+        if (choice == 0) break; // Exit
 
-        if (choice == 1 && current->paths[0] != NULL) {
-            current = current->paths[0];  // Move to new node
-        } else {
+        // Use assembly for optimized branching
+        int index = fast_choice(choice);
+        if (index == -1) {
             printf("Invalid choice. Try again.\n");
+            continue;
         }
+
+        // Move to the new node
+        current = start.paths[index];
+        displayNode(current);
     }
 
     return 0;
+}
 
-
+int right_riddle(){
 
 }
 
